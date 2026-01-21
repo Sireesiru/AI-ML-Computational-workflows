@@ -1,4 +1,4 @@
-<img width="909" height="491" alt="image" src="https://github.com/user-attachments/assets/d7724ca1-aee5-4d6e-99fd-83ecd7d3dc56" /># Facility-Scale AI/ML workflows for autonomous multimodal data analysis 
+# Facility-Scale AI/ML workflows for autonomous multimodal data analysis 
 AI/ML Workflows for multimodal datasets integration and analysis 
 
 
@@ -27,5 +27,6 @@ Morphological feature extraction
            ↓
 Quantitative biological interpretation
            ↓
-Human-guided refinement (if required)     
+Human-guided refinement (if required)    
+<img width="500" height="500" alt="image" src="https://github.com/user-attachments/assets/d7724ca1-aee5-4d6e-99fd-83ecd7d3dc56" />
 
