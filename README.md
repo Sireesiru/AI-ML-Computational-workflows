@@ -18,7 +18,7 @@ This repository focuses on:
 Components that depend on internal networking, security policies, or facility-specific services are documented architecturally rather than provided as executable code.
 
 ## High-Level Workflow
-<img width="742" height="531" alt="image" src="https://github.com/user-attachments/assets/1bc670f1-fa55-4e84-b274-e7d11899af2a" />
+<img width="300" height="300" alt="image" src="https://github.com/user-attachments/assets/1bc670f1-fa55-4e84-b274-e7d11899af2a" />
     
 
 
