@@ -2,20 +2,32 @@ import os
 import requests
 import qrcode
 import getpass
+import argparse
+
+# ----------------------------
+# ARGUMENT PARSING
+# ----------------------------
+parser = argparse.ArgumentParser(description="Generate QR codes for NOMAD entries")
+parser.add_argument("--upload_id", default="g6EUS_grQLaeezM3kT5-GQ",
+                    help="NOMAD Upload ID (default: manuscript demonstration dataset)")
+parser.add_argument("--api_base", default="http://localhost/nomad-oasis/api/v1",
+                    help="NOMAD API base URL")
+parser.add_argument("--outdir", default="qr_codes",
+                    help="Output directory for QR codes")
+args = parser.parse_args()
 
 # ----------------------------
 # CONFIG
 # ----------------------------
 # For external deployments, replace with your specific NOMAD instance URL
-# Current value points to internal NOMAD deployment on CNMS cloud.For external deployments, replace localhost with your NOMAD instance IP or domain
-API_BASE = "http://localhost/nomad-oasis/api/v1"
+# Current value points to internal NOMAD deployment on CNMS cloud
+API_BASE = args.api_base
 GUI_BASE = "http://localhost/nomad-oasis"
 
 # This UPLOAD_ID corresponds to the demonstration dataset in the manuscript
 # Replace with your own NOMAD upload ID for new deployments
-UPLOAD_ID = "g6EUS_grQLaeezM3kT5-GQ"
-QR_OUTDIR = "qr_codes"
-
+UPLOAD_ID = args.upload_id
+QR_OUTDIR = args.outdir
 os.makedirs(QR_OUTDIR, exist_ok=True)
 
 # ----------------------------
