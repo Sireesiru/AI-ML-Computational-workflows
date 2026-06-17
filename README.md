@@ -2,7 +2,7 @@
 
 This repository documents a facility-scale workflow for microscopy data acquisition, standardization, machine-learning–enabled analysis, and metadata management developed at the Center for Nanophase Materials Sciences (CNMS), Oak Ridge National Laboratory.The workflow is designed to operate under realistic scientific user-facility constraints, including network-isolated instruments, heterogeneous vendor-specific data formats, and the need for scalable, reproducible analysis pipelines. This repository provides a general, deployable framework for handling heterogeneous, multimodal scientific data across network boundaries, standardizing it, managing metadata, and enabling downstream ML workflows. We show reference implementations, architectural patterns, and portable analysis components that can be adapted to other shared experimental facilities. 
 
-<img width="500" height="250" alt="image" src="https://github.com/user-attachments/assets/d7724ca1-aee5-4d6e-99fd-83ecd7d3dc56" />
+<img width="700" height="400" alt="image" src="https://github.com/user-attachments/assets/d7724ca1-aee5-4d6e-99fd-83ecd7d3dc56" />
 
 ## Scope and Design 
 This repository focuses on:
@@ -23,8 +23,8 @@ Components that depend on internal networking, security policies, or facility-sp
 AI-ML-Computational-workflows/
 ├── Data/                        # Standardized reference datasets
 ├── Standardization/             # Scripts to convert vendor formats → HDF5
-├── metadata into NOMAD/         # Metadata extraction and NOMAD upload tools
-└── Dash and ML analysis/        # Interactive dashboards and ML segmentation
+├── Metadata_into_NOMAD/         # Metadata extraction and NOMAD upload tools
+└── Dash_and_ML_analysis/        # Interactive dashboards and ML segmentation
 ```
 ## Requirements
 
@@ -34,7 +34,7 @@ pip install sidpy h5py numpy matplotlib dash plotly
 ## Usage
 
 > This workflow runs within the **CNMS Virtual Machines at Oak Ridge National Laboratory**. External replication requires equivalent cloud infrastructure. The workflow uses a client-server architecture.
-<img width="500" height="300" alt="network" src="https://github.com/user-attachments/assets/577341a6-ee89-4398-bfe8-df07a711acce" />
+<img width="750" height="400" alt="network" src="https://github.com/user-attachments/assets/577341a6-ee89-4398-bfe8-df07a711acce" />
 
 
 
@@ -47,7 +47,7 @@ git clone https://github.com/Sireesiru/AI-ML-Computational-workflows.git
 ```
 ### 3. Start the server
 ```bash
-cd Standardization
+cd standardization
 python server_1b.py
 ```
 Note the **port number** printed in the terminal. This is need it in the next step.
@@ -56,7 +56,7 @@ Note the **port number** printed in the terminal. This is need it in the next st
 ```bash
 python gui.py
 ```
-Enter the port number from Step 3, your NOMAD credentials, and the folder path to watch. Once submitted, the server authenticates your credentials and initiates `ibw_watcher_v2a.py`, which monitors the specified folder continuously. Every new incoming file is converted to HDF5, uploaded to NOMAD, and its metadata extracted from raw image headers and pushed automatically.
+Enter the port number from Step 3, your NOMAD credentials, and the folder path to be watched. Once submitted, the server authenticates your credentials and initiates `copy_ibw_watcher_v2a.py`, which monitors the specified folder continuously. Every new incoming file is converted to HDF5, uploaded to NOMAD, and its metadata extracted from raw image headers and pushed automatically.
 
 
 ### 5. Capture sample-specific metadata using a Custom Schema
@@ -70,26 +70,25 @@ python UPLOAD_ID_sample_name_mapping.py
 
 ### 6. Generate QR codes for sample tracking
 ```bash
-cd "metadata into NOMAD"
+cd "Metadata_into_NOMAD"
 python get_QR.py
 ```
-Generates QR codes from NOMAD URLs, linking physical samples to their complete digital records.
+This generates QR codes from NOMAD URLs, linking physical samples to their complete digital records.
 
 ### 7. Launch the ML analysis dashboards
 ```bash
-cd "Dash and ML analysis"
+cd "Dash_and_ML_analysis"
 python AFM_dash_app.py
 python EM_dash_app_thickness.py
 ```
-Launches interactive Dash apps to visualize quantitative plots of AFM and electron microscopy datasets.
-<img width="500" height="500" alt="Dash" src="https://github.com/user-attachments/assets/b402fd75-2886-48cd-b846-794ba521993d" />
+Launches interactive Dash apps to visualize quantitative plots of Panteoa bacterial datasets from AFM and electron microscopy.
+<img width="1100" height="600" alt="Dash" src="https://github.com/user-attachments/assets/b402fd75-2886-48cd-b846-794ba521993d" />
 
 ### 8. Human-in-the-Loop model refinement
 To improve segmentation performance, fine-tune your models using additional synthetic bacterial images from [SimuScan](https://github.com/Rmillansol/SimuScan-AFMtools) and evaluate for improvement.
 
 ## Author
 Developed at the Center for Nanophase Materials Sciences (CNMS), Oak Ridge National Laboratory.
-
 Contact: **Sita Sirisha Madugula** — (mailto:madugulas@ornl.gov) | [ORCID](https://orcid.org/0000-0001-9944-117X)
 
 ## License
