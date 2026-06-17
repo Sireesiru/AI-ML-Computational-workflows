@@ -87,6 +87,37 @@ Launches interactive Dash apps to visualize quantitative plots of Panteoa bacter
 ### 8. Human-in-the-Loop model refinement
 To improve segmentation performance, fine-tune your models using additional synthetic bacterial images from [SimuScan](https://github.com/Rmillansol/SimuScan-AFMtools) and evaluate for improvement.
 
+## Extending the Framework to Other Domains
+
+The core infrastructure (file-watcher, metadata management, HDF5 standardization, 
+cloud architecture, authentication, and QR code tracking) is fully modular and 
+transferable to domains beyond microscopy without modification.
+
+### What requires adjustment:
+
+**For instrument-based modalities (e.g., Raman spectroscopy, XPS, EELS, 
+neutron/X-ray scattering):**
+- Develop format-specific readers in SciFiReaders for new file formats
+- Adapt custom NOMAD/DataFed schemas for the experimental context
+- Replace ML models and Dash visualization interfaces with 
+  application-specific equivalents
+
+**For complex simulation-based domains (e.g., MD simulations, DFT calculations):**
+- Develop readers for common output formats (VASP, Quantum ESPRESSO, LAMMPS)
+- Map atomistic outputs (atomic coordinates, energy landscapes, forces) 
+  onto appropriate sidpy dimension types
+- Redesign ML and visualization components for non-image data
+- Note: NOMAD already provides mature schemas for computational materials 
+  science, making the metadata layer readily compatible
+
+### What stays identical:
+- File-watcher and automated ingestion pipeline
+- NOMAD-Oasis or DataFed metadata management
+- HDF5 standardization and sidpy dataset abstraction
+- Authentication and SSL layer
+- QR code-based sample tracking
+- Cloud and VM infrastructure
+
 ## Author
 Developed at the Center for Nanophase Materials Sciences (CNMS), Oak Ridge National Laboratory.
 Contact: **Sita Sirisha Madugula** — (madugulas@ornl.gov) | [ORCID](https://orcid.org/0000-0001-9944-117X)
