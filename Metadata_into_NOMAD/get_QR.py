@@ -7,8 +7,7 @@ import getpass
 # CONFIG
 # ----------------------------
 # For external deployments, replace with your specific NOMAD instance URL
-# For local NOMAD-Oasis deployments, keep as localhost
-
+# Current value points to internal NOMAD deployment on CNMS cloud.For external deployments, replace localhost with your NOMAD instance IP or domain
 API_BASE = "http://localhost/nomad-oasis/api/v1"
 GUI_BASE = "http://localhost/nomad-oasis"
 
