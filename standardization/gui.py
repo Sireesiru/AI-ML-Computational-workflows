@@ -66,7 +66,7 @@ def verify_nomad():
 
     HOST = server_host_var.get().strip() or "localhost"
     try:
-        PORT = int(server_port_var.get().strip() or "8104")
+        PORT = int(server_port_var.get().strip() or "8015")
     except ValueError:
         messagebox.showerror("NOMAD", "Port must be a number.")
         return
@@ -101,7 +101,7 @@ server_host_var = tk.StringVar(value="localhost")
 ttk.Entry(server_box, textvariable=server_host_var, width=24).grid(row=0, column=1, sticky="w", padx=8, pady=4)
 
 ttk.Label(server_box, text="Port:").grid(row=0, column=2, sticky="w", padx=8, pady=4)
-server_port_var = tk.StringVar(value="8104")
+server_port_var = tk.StringVar(value="8015")
 ttk.Entry(server_box, textvariable=server_port_var, width=10).grid(row=0, column=3, sticky="w", padx=8, pady=4)
 
 # -------------------
