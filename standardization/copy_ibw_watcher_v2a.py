@@ -1,17 +1,3 @@
-"""
-Automated multimodal microscopy data ingestion and standardization pipeline.
-
-This script demonstrates how heterogeneous microscopy data formats
-(e.g., IBW, MRC, GWY) can be automatically detected, standardized into
-sidpy-compatible HDF5/NeXus structures, enriched with metadata, and
-optionally forwarded to downstream data management systems.
-
-The implementation is designed to illustrate workflow patterns and is
-portable to any environment with centralized compute and storage
-resources. Infrastructure-specific parameters (paths, servers,
-credentials) are provided via configuration and can be adapted.
-"""
-
 import os
 import time
 import glob
@@ -28,11 +14,7 @@ from SciFiReaders.readers import MRCReader, IgorIBWReader, GwyddionReader
 import SciFiReaders.readers.microscopy.em.tem.mrc_reader as mrc_reader
 import sidpy
 import warnings
-# Readers
 import SciFiReaders as sr
-from SciFiReaders.readers import MRCReader, IgorIBWReader, GwyddionReader
-import SciFiReaders.readers.microscopy.em.tem.mrc_reader as mrc_reader
-
 
 # ========= Reduce noisy warnings (but keep errors visible) =========
 warnings.filterwarnings(
@@ -49,7 +31,7 @@ warnings.filterwarnings(
 )
 
 # ================================
-# Monkey Patch: Safe SciFiReaders MRCReader to handle 2D images of EM 
+# Monkey Patch: Safe SciFiReaders MRCReader to handle 2D images of EM
 # ================================
 def safe_read(self):
     """Patched version of MRCReader.read() to handle 2D MRCs safely."""
@@ -78,7 +60,7 @@ mrc_reader.MRCReader.read = safe_read
 # ================================
 UPLOADS_ENABLED = False
 TOKEN = None
-nomad_url = 'http://localhost/nomad-oasis/api/v1/'# Replace with user specific NOMAD endpoint 
+nomad_url = 'http://localhost/nomad-oasis/api/v1/'
 
 # -------------------------------------------------------------------
 # Authentication & NOMAD API helpers
@@ -133,6 +115,11 @@ def upload_to_NOMAD(nomad_url, token, upload_files):
                     print(f"[upload] Failed for {file_path}, response={response.json()}")
         except Exception as e:
             print(f"[upload] Error with {file_path}: {e}")
+            try:
+                print("[upload debug] status:", response.status_code)
+                print("[upload debug] body:", response.text)
+            except Exception:
+                pass
     return results
 
 def check_upload_status(nomad_url, token, upload_id):
@@ -160,10 +147,75 @@ def publish_upload(nomad_url, token, upload_id):
 # Conversion
 # -------------------------------------------------------------------
 READER_CLASSES = {
-    '.ibw': IgorIBWReader,
-    '.mrc': MRCReader,
-    '.gwy': GwyddionReader,
+    '.ibw': sr.IgorIBWReader,
+    '.mrc': sr.MRCReader,
+    '.gwy': sr.GwyddionReader,
 }
+
+# ---------------- MINIMAL FIX HELPERS (NEW) ----------------
+def _to_str_list(x):
+    """Convert HDF5-returned attr values into a clean python list[str]."""
+    if x is None:
+        return None
+    if isinstance(x, bytes):
+        return [x.decode("utf-8", errors="ignore")]
+    if isinstance(x, str):
+        return [x]
+    if isinstance(x, np.ndarray):
+        # flatten then stringify
+        flat = x.reshape(-1)
+        out = []
+        for v in flat.tolist():
+            if isinstance(v, bytes):
+                out.append(v.decode("utf-8", errors="ignore"))
+            else:
+                out.append(str(v))
+        return out
+    if isinstance(x, (list, tuple)):
+        return [str(v) for v in x]
+    return [str(x)]
+
+def _sanitize_group_for_pynxtools(group, str_dt):
+    """
+    Remove/convert 'object' dtype attrs that crash pynxtools:
+    - convert 'axes' and 'DIMENSION_LABELS' to real string dtype arrays
+    - delete 'DIMENSION_LIST' (often stores object references)
+    """
+    def fix_attrs(obj):
+        # Remove DIMENSION_LIST if present (object refs -> crashes)
+        if "DIMENSION_LIST" in obj.attrs:
+            try:
+                del obj.attrs["DIMENSION_LIST"]
+            except Exception:
+                pass
+
+        # Convert axes / DIMENSION_LABELS to string dtype arrays (not dtype=object)
+        for k in ("axes", "DIMENSION_LABELS"):
+            if k in obj.attrs:
+                v = obj.attrs.get(k)
+                # only touch the problematic cases
+                if isinstance(v, np.ndarray) and v.dtype.kind == "O":
+                    as_list = _to_str_list(v)
+                    if as_list is not None:
+                        obj.attrs.modify(k, np.array(as_list, dtype=str_dt))
+
+        # If any other attribute is dtype=object, try safe conversion if it is string-like
+        for k in list(obj.attrs.keys()):
+            v = obj.attrs.get(k)
+            if isinstance(v, np.ndarray) and v.dtype.kind == "O":
+                # If it looks like strings, convert; otherwise leave it
+                try:
+                    as_list = _to_str_list(v)
+                    if as_list is not None and all(isinstance(s, str) for s in as_list):
+                        obj.attrs.modify(k, np.array(as_list, dtype=str_dt))
+                except Exception:
+                    pass
+
+    # fix group itself
+    fix_attrs(group)
+    # fix all children
+    group.visititems(lambda _name, obj: fix_attrs(obj))
+# -----------------------------------------------------------
 
 def convert_to_h5(file_path, metadata=None):
     ext = os.path.splitext(file_path)[1].lower()
@@ -196,15 +248,37 @@ def convert_to_h5(file_path, metadata=None):
     h5_name = file_path.rsplit('.', 1)[0] + '.h5.nxs'
 
     with h5py.File(h5_name, 'w') as h5_f:
-        h5_group = h5_f.create_group('Measurement_Nexus')
-        def_dset = h5_group.create_dataset('definition', data="NXem")
-        def_dset.attrs["url"] = "https://github.com/FAIRmat-NFDI/nexus_definitions"
-        def_dset.attrs["version"] = "v2024.02"
+        str_dt = h5py.string_dtype(encoding='utf-8')
+
+        # --- Create proper NXentry at root ---
+        entry = h5_f.create_group('entry')
+        entry.attrs['NX_class'] = 'NXentry'
+
+        # definition MUST live directly under NXentry
+        # (Guarded so we don't accidentally create it twice)
+        if 'definition' not in entry:
+            def_dset = entry.create_dataset('definition', data="NXem", dtype=str_dt)
+            def_dset.attrs["url"] = "https://github.com/FAIRmat-NFDI/nexus_definitions"
+            def_dset.attrs["version"] = "v2024.02"
+
+        # Create your existing group under NXentry
+        h5_group = entry.create_group('Measurement_Nexus')
+        h5_group.attrs['NX_class'] = 'NXsubentry'
+
+        # IMPORTANT MINIMAL FIX:
+        # Ensure there is NO Measurement_Nexus/definition with dtype=object (this breaks pynxtools).
+        # If something/some older logic created it, delete it.
+        if 'definition' in h5_group:
+            del h5_group['definition']
 
         # attach any incoming metadata
         if metadata:
             for key, value in metadata.items():
-                h5_group.attrs[key] = value
+                # keep as attribute, but force to string to avoid object dtype surprises
+                try:
+                    h5_group.attrs[key] = str(value)
+                except Exception:
+                    h5_group.attrs[key] = json.dumps(value)
 
         # Add rich MRC header metadata if applicable
         if ext == ".mrc":
@@ -246,11 +320,13 @@ def convert_to_h5(file_path, metadata=None):
 
             if "generic" in h5_g:
                 try:
+                    # your original lines (kept), but they were wrong order/usage previously in some versions.
+                    # We keep your intent and just ensure the attrs become clean strings (sanitized below).
                     h5_g['generic'].copy("x", "axis_i")
                     h5_g['generic'].copy("y", "axis_j")
                     h5_g['generic'].attrs.update({
                         "signal": "generic",
-                        "axes": np.array(['axis_j', 'axis_i'], dtype='object'),
+                        "axes": np.array(['axis_j', 'axis_i'], dtype=str_dt),
                         "axis_i_indices": 0,
                         "axis_j_indices": 1,
                     })
@@ -261,6 +337,12 @@ def convert_to_h5(file_path, metadata=None):
                 axis_j = h5_g.create_dataset("axis_j", data=np.arange(data[key].shape[-2]))
                 axis_i.attrs.update({"units": "pixels", "long_name": "Width"})
                 axis_j.attrs.update({"units": "pixels", "long_name": "Height"})
+
+            # MINIMAL FIX: sanitize attrs that crash pynxtools
+            _sanitize_group_for_pynxtools(h5_g, str_dt)
+
+        # Also sanitize the parent group (important)
+        _sanitize_group_for_pynxtools(h5_group, str_dt)
 
     # ----- NEW: Success banners per file type -----
     if ext == ".ibw":
@@ -273,12 +355,9 @@ def convert_to_h5(file_path, metadata=None):
     print(f"[convert] Converted {file_path} ? {h5_name}")
     return h5_name
 
-# ------------------------------------------------------------
+# -------------------------------------------------------------------
 # Watcher logic
-# ------------------------------------------------------------
-# This loop illustrates how newly generated instrument files are detected, converted into standardized HDF5/NeXus formats,enriched with metadata, and optionally forwarded to external data management systems.
-# ------------------------------------------------------------
-
+# -------------------------------------------------------------------
 def start_watcher(directory, metadata, credentials):
     directory = directory if directory.startswith("/home/cloud/") else "/home/cloud/" + directory
     print(f"[file_watcher] Watching: {directory}")
@@ -320,7 +399,7 @@ def watch_folder(folder_path, uploads_enabled, TOKEN, metadata):
                 h5_name = convert_to_h5(file, metadata=metadata)
                 print(f"[file_watcher] Converted {file} ? {h5_name}")
 
-                if uploads_enabled:
+                if uploads_enabled and h5_name:
                     upload_results = upload_to_NOMAD(nomad_url, TOKEN, h5_name)
                     for f, upload_id in upload_results.items():
                         print(f"[file_watcher] Uploaded {f}, upload_id={upload_id}")
