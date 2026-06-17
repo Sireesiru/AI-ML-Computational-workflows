@@ -6,9 +6,14 @@ import getpass
 # ----------------------------
 # CONFIG
 # ----------------------------
+# For external deployments, replace with your specific NOMAD instance URL
+# For local NOMAD-Oasis deployments, keep as localhost
+
 API_BASE = "http://localhost/nomad-oasis/api/v1"
 GUI_BASE = "http://localhost/nomad-oasis"
 
+# This UPLOAD_ID corresponds to the demonstration dataset in the manuscript
+# Replace with your own NOMAD upload ID for new deployments
 UPLOAD_ID = "g6EUS_grQLaeezM3kT5-GQ"
 QR_OUTDIR = "qr_codes"
 
