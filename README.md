@@ -99,28 +99,25 @@ transferable to domains beyond microscopy without modification.
 neutron/X-ray scattering):**
 - Develop format-specific readers in SciFiReaders for new file formats
 - Adapt custom NOMAD/DataFed schemas for the experimental context
-- Replace ML models and Dash visualization interfaces with 
-  application-specific equivalents
+- Replace ML models and Dash visualization interfaces with application-specific equivalents.
 
 **For complex simulation-based domains (e.g., MD simulations, DFT calculations):**
-- Develop readers for common output formats (VASP, Quantum ESPRESSO, LAMMPS)
-- Map atomistic outputs (atomic coordinates, energy landscapes, forces) 
-  onto appropriate sidpy dimension types
-- Redesign ML and visualization components for non-image data
-- Note: NOMAD already provides mature schemas for computational materials 
-  science, making the metadata layer readily compatible
+- NOMAD already provides mature schemas for computational materials making metadata layer readily compatible. 
+- Redesign ML and visualization components of the workflow.
 
-### What stays identical:
-- File-watcher and automated ingestion pipeline
-- NOMAD-Oasis or DataFed metadata management
-- HDF5 standardization and sidpy dataset abstraction
-- Authentication and SSL layer
-- QR code-based sample tracking
-- Cloud and VM infrastructure
+### What stays unchanged in the pipeline:
+- File-watcher and automated ingestion pipeline.
+- NOMAD-Oasis or DataFed metadata management.
+- HDF5 standardization and sidpy dataset abstraction.
+- Authentication and SSL layer.
+- QR code-based sample tracking.
+- Cloud and VM infrastructure.
 
 ## Author
 Developed at the Center for Nanophase Materials Sciences (CNMS), Oak Ridge National Laboratory.
-Contact: **Sita Sirisha Madugula** — (madugulas@ornl.gov) | [ORCID](https://orcid.org/0000-0001-9944-117X)
+Contacts: **Sita Sirisha Madugula** — (madugulas@ornl.gov) | [ORCID](https://orcid.org/0000-0001-9944-117X)
+          **Rama K. Vasudevan** —(vasudevanrk@onrl.gov) | [ORCID](https://orcid.org/0000-0003-4692-8579)
+
 
 ## License
 The contents of this repository are licensed under the [MIT License](LICENSE)).  
